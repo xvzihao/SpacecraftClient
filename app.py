@@ -1,7 +1,7 @@
 import wx
 from wx.core import *
 
-from pages.download import DownloadPage
+from pages.download import DownloadFrame
 from pages.launch import *
 from locals import *
 
@@ -39,6 +39,6 @@ class MainFrame(BaseFrame):
 
 if __name__ == '__main__':
     app = App()
-    mainFrame = DownloadPage(None)
+    mainFrame = MainFrame()
     mainFrame.Show(True)
     app.MainLoop()

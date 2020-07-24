@@ -51,6 +51,7 @@ class Library:
         else:
             self.useless = True
 
+
     @property
     def done(self):
         if self.useless:

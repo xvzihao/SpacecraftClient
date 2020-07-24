@@ -1,6 +1,8 @@
 import ssl
 from urllib.request import urlopen, Request
+from zipfile import ZipFile
 
+from launcher import launch
 from locals import *
 from loader import *
 from wx.core import *
@@ -36,7 +38,7 @@ class Task:
         self.size = size
 
     def run(self):
-        file = self.file = File(self.path)
+        file = self.file = File(str(self.path))
         browser = urlopen(
             url=Request(
                 url=self.url,
@@ -84,7 +86,7 @@ class TaskBar(Panel):
         self.pos = self.GetPosition()
 
     def set_state(self, task):
-        self.label.SetLabel(f"[{str(int(task.progress * 100)).rjust(3)}%] {task.url}")
+        self.label.SetLabel(f"[{str(int(task.progress * 100)).rjust(3)}%] {task.path}")
         self.bar.slideTo(task.progress)
 
     def hide(self):
@@ -94,14 +96,18 @@ class TaskBar(Panel):
         self.SetPosition(self.pos)
 
 
-class DownloadPage(BaseFrame):
-    def __init__(self, parent):
+class DownloadFrame(BaseFrame):
+    def __init__(self, parent, name, final_frame):
         super().__init__(
-            parent,
+            parent=parent,
             size=(350, 450),
-            style=DEFAULT_FRAME_STYLE ^ CLOSE_BOX ^ RESIZE_BORDER ^ MAXIMIZE_BOX,
-            title="Download"
+            style=DEFAULT_FRAME_STYLE ^ RESIZE_BORDER ^ MAXIMIZE_BOX| FRAME_FLOAT_ON_PARENT,
+            title="Download Game"
         )
+
+        self.name = name
+        self.final_frame = final_frame
+
         w, h = self.GetSize()
         self.SetIcon(Icon("assets/icon.ico"))
         self.SetBackgroundColour(Colour(38, 38, 38))
@@ -123,12 +129,43 @@ class DownloadPage(BaseFrame):
         ]
         self.tasks = []
 
-        self.Bind(EVT_CLOSE, self.on_close)
         self.completed = 0
+        self.Show(True)
+
+        self.Bind(EVT_CLOSE, self.on_close)
+
         Thread(target=self.centerThread).start()
         Thread(target=self.main_thread).start()
 
+    def on_close(self, evt):
+        self.GetParent().tx_name.Enable()
+        self.GetParent().btn_play.Enable()
+        self.Destroy()
+
+    def Destory(self):
+        super().Destroy()
+
     def create_task_thread(self, missing):
+        url = 'https://launcher.mojang.com/v1/objects/0f275bc1547d01fa5f56ba34bdc87d981ee12daf/client.jar'
+        size = 10180113
+        path = Path(ROOT_PATH+"/.minecraft/versions/1.12.2/1.12.2.jar")
+        do = True
+        if path.exists():
+            if os.path.getsize(path) == size:
+                do = False
+        if do:
+            missing.append(Task(url, path, size))
+
+        url = 'https://files.minecraftforge.net/maven/net/minecraftforge/forge/1.12.2-14.23.5.2854/forge-1.12.2-14.23.5.2854-universal.jar'
+        size = 4464068
+        path = Path(ROOT_PATH+"/.minecraft/libraries/net/minecraftforge/forge/1.12.2-14.23.5.2854/forge-1.12.2-14.23.5.2854.jar")
+        do = True
+        if path.exists():
+            if os.path.getsize(path) == size:
+                do = False
+        if do:
+            missing.append(Task(url, path, size))
+
         for task in missing:
             Thread(target=self.task_handler, args=(task, )).start()
 
@@ -139,6 +176,7 @@ class DownloadPage(BaseFrame):
         count = len(missing)
         Thread(target=self.create_task_thread, args=(missing, )).start()
         while self.completed != count:
+            count = len(missing)
             self.sum_progress.slideTo(self.completed / count)
             self.tx_sum.SetLabel(f"Tasks [{self.completed}/{count}]")
 
@@ -156,17 +194,22 @@ class DownloadPage(BaseFrame):
                 pass
 
             time.sleep(0.2)
+        with File(ROOT_PATH+"/.minecraft/versions/1.12.2/1.12.2.json", 'w') as f:
+            json.dump(libraries, f)
+        with open(ROOT_PATH+"/assets/1.12.json", 'r') as f:
+            with File(ROOT_PATH+"/.minecraft/assets/indexes/1.12.json", 'w') as d:
+                d.write(f.read())
+        natives_path = ROOT_PATH+'/.minecraft/libraries/org/lwjgl/lwjgl/lwjgl-platform/2.9.2-nightly-20140822/lwjgl-platform-2.9.2-nightly-20140822-natives-windows.jar'
+        with ZipFile(natives_path, 'r') as zip_ref:
+            zip_ref.extractall(ROOT_PATH+"/.minecraft/versions/1.12.2/natives/")
         self.tx_sum.SetLabel(f"* Completed! * ")
         self.sum_progress.slideTo(1)
         time.sleep(1.5)
-        self.Destroy()
+        self.final_frame.Destroy()
+        Thread(target=launch, kwargs={"player": self.name}).start()
 
     def task_handler(self, task):
         self.tasks.append(task)
         task.run()
         self.tasks.remove(task)
         self.completed += 1
-
-    def on_close(self, evt):
-        # self.Destroy()
-        pass

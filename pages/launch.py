@@ -3,6 +3,7 @@ from threading import Thread
 
 from wx.core import *
 from locals import *
+from pages.download import DownloadFrame
 
 
 class LaunchPage(Page):
@@ -34,7 +35,7 @@ class LaunchPage(Page):
         self.btn_play.SetForegroundColour(Colour(255, 255, 255))
 
         self.btn_play.Bind(
-            EVT_BUTTON, lambda evt: Thread(target=self.on_press).start() if not self.pressed else None
+            EVT_BUTTON, lambda evt: self.on_press() if not self.pressed else None
         )
         self.btn_play.Bind(
             EVT_ENTER_WINDOW,
@@ -56,7 +57,9 @@ class LaunchPage(Page):
     def on_press(self):
         self.pressed = True
         self.btn_play.SetBackgroundColour(Colour(45, 202, 100))
-        time.sleep(1)
+        frame = DownloadFrame(self, self.tx_name.GetValue(), self.GetParent().GetParent())
+        self.btn_play.Disable()
+        self.tx_name.Disable()
         self.pressed = False
         self.btn_play.SetBackgroundColour(Colour(45, 215, 100))
 
