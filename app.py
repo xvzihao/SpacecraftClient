@@ -27,6 +27,29 @@ class MainFrame(Frame):
         self.Bind(EVT_SIZING, self.on_resize)
         self.Bind(EVT_SIZE, self.on_resize)
 
+        Thread(target=self.centerThread).start()
+
+    def centerThread(self):
+        sw, sh = DisplaySize()
+        sw /= 2
+        sh /= 2
+
+        w, h = self.GetSize()
+        w /= 2
+        h /= 2
+
+        target_x = sw - w
+        target_y = sh - h
+
+        x, y = self.GetPosition()
+        start = time.time()
+        while time.time() - start < 0.7:
+            x, y = self.GetPosition()
+            self.SetPosition((
+                x - (x - target_x) / 5, y - (y - target_y) / 5
+            ))
+            time.sleep(1/60)
+
     def on_resize(self, event: SizeEvent):
         w, h = event.GetSize()
         self.screen.SetSize(w - 16, h - 39)
