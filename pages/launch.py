@@ -5,7 +5,7 @@ from wx.core import *
 from locals import *
 
 
-class LoginPage(Page):
+class LaunchPage(Page):
     def __init__(self, parent):
         super().__init__(parent)
         self.image_container = Panel(self)
@@ -92,3 +92,4 @@ class LoginPage(Page):
         self.btn_play.SetPosition((
             width * (7 / 9) - w, height * (7 / 9) - h
         ))
+
