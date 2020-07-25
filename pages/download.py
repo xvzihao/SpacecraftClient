@@ -1,13 +1,15 @@
 import ssl
-from socket import timeout
 from urllib.error import URLError
 from urllib.request import urlopen, Request
 from zipfile import ZipFile
 
 from launcher import launch
-from locals import *
 from loader import *
 from wx.core import *
+
+
+def is_mod(name):
+    return name.endswith('.jar') or name.endswith('.litemod')
 
 
 class Task:
@@ -18,32 +20,34 @@ class Task:
 
         try:
             with urlopen(
-                url=server_url+'/mods/planned',
-                timeout=5,
+                    url=server_url + '/mods/planned',
+                    timeout=5,
             ) as browser:
                 content = json.loads(browser.read().decode('utf8'))
                 for name in content:
-                    link = content[name]['link']
-                    with urlopen(
-                        url=Request(
-                            url=link,
-                            headers={"User-Agent": "SpaceCraft-Client"}
-                        ),
-                        context=ssl.create_default_context()
-                    ) as b:
-                        size = int(b.headers.get("Content-Length"))
-                        path = os.path.join(ROOT_PATH, ".minecraft/mods/", name)
-                        if not Path(path).exists():
-                            missing.append(
-                                Task(link, path, size)
-                            )
-                        elif os.path.getsize(path) != size:
-                            missing.append(
-                                Task(link, path, size)
-                            )
+                    if content[name]['client']:
+                        link = content[name]['link']
+                        with urlopen(
+                                url=Request(
+                                    url=link,
+                                    headers={"User-Agent": "SpaceCraft-Client"}
+                                ),
+                                context=ssl.create_default_context()
+                        ) as b:
+                            size = int(b.headers.get("Content-Length"))
+                            path = os.path.join(ROOT_PATH, ".minecraft/mods/", name)
+                            if not Path(path).exists():
+                                missing.append(
+                                    Task(link, path, size)
+                                )
+                            elif os.path.getsize(path) != size:
+                                missing.append(
+                                    Task(link, path, size)
+                                )
 
-        except URLError as e:
-            print(e)
+        except Exception as e:
+            print("Unable to get module list. [%s]" % e)
+
         with File('assets/1.12.json', 'r') as f:
             objs = json.load(f)["objects"]
         for name in objs:
@@ -61,6 +65,29 @@ class Task:
                     )
 
         return missing
+
+    @staticmethod
+    def get_non_used():
+        non_used = []
+        try:
+            with urlopen(
+                    url=server_url + '/mods/planned',
+                    timeout=5,
+            ) as browser:
+                content = json.loads(browser.read().decode('utf8'))
+                names = [
+                    name
+                    for name in content
+                    if content[name]['client']
+                ]
+
+                for name in os.listdir(ROOT_PATH + "/.minecraft/mods"):
+                    if is_mod(name) and name not in names:
+                        non_used.append(str(Path(os.path.join(ROOT_PATH, '.minecraft/mods', name))))
+
+        except URLError as e:
+            print(e)
+        return non_used
 
     def __init__(self, url, file, size):
         self.path = file
@@ -132,7 +159,7 @@ class DownloadFrame(BaseFrame):
         super().__init__(
             parent=parent,
             size=(350, 450),
-            style=DEFAULT_FRAME_STYLE ^ RESIZE_BORDER ^ MAXIMIZE_BOX| FRAME_FLOAT_ON_PARENT,
+            style=DEFAULT_FRAME_STYLE ^ RESIZE_BORDER ^ MAXIMIZE_BOX | FRAME_FLOAT_ON_PARENT,
             title="Download Game"
         )
 
@@ -179,7 +206,7 @@ class DownloadFrame(BaseFrame):
     def create_task_thread(self, missing):
         url = 'https://launcher.mojang.com/v1/objects/0f275bc1547d01fa5f56ba34bdc87d981ee12daf/client.jar'
         size = 10180113
-        path = Path(ROOT_PATH+"/.minecraft/versions/1.12.2/1.12.2.jar")
+        path = Path(ROOT_PATH + "/.minecraft/versions/1.12.2/1.12.2.jar")
         do = True
         if path.exists():
             if os.path.getsize(path) == size:
@@ -189,7 +216,8 @@ class DownloadFrame(BaseFrame):
 
         url = 'https://files.minecraftforge.net/maven/net/minecraftforge/forge/1.12.2-14.23.5.2854/forge-1.12.2-14.23.5.2854-universal.jar'
         size = 4464068
-        path = Path(ROOT_PATH+"/.minecraft/libraries/net/minecraftforge/forge/1.12.2-14.23.5.2854/forge-1.12.2-14.23.5.2854.jar")
+        path = Path(
+            ROOT_PATH + "/.minecraft/libraries/net/minecraftforge/forge/1.12.2-14.23.5.2854/forge-1.12.2-14.23.5.2854.jar")
         do = True
         if path.exists():
             if os.path.getsize(path) == size:
@@ -198,14 +226,17 @@ class DownloadFrame(BaseFrame):
             missing.append(Task(url, path, size))
 
         for task in missing:
-            Thread(target=self.task_handler, args=(task, )).start()
+            Thread(target=self.download_task_handler, args=(task,)).start()
+
+        for name in Task.get_non_used():
+            os.remove(name)
 
     def main_thread(self):
         for i in range(7):
             self.tasks_widgets[i].hide()
         missing = Task.get_missing()
         count = len(missing)
-        Thread(target=self.create_task_thread, args=(missing, )).start()
+        Thread(target=self.create_task_thread, args=(missing,)).start()
         while self.completed != count:
             count = len(missing)
             self.sum_progress.slideTo(self.completed / count)
@@ -225,21 +256,21 @@ class DownloadFrame(BaseFrame):
                 pass
 
             time.sleep(0.2)
-        with File(ROOT_PATH+"/.minecraft/versions/1.12.2/1.12.2.json", 'w') as f:
+        with File(ROOT_PATH + "/.minecraft/versions/1.12.2/1.12.2.json", 'w') as f:
             json.dump(libraries, f)
-        with open(ROOT_PATH+"/assets/1.12.json", 'r') as f:
-            with File(ROOT_PATH+"/.minecraft/assets/indexes/1.12.json", 'w') as d:
+        with open(ROOT_PATH + "/assets/1.12.json", 'r') as f:
+            with File(ROOT_PATH + "/.minecraft/assets/indexes/1.12.json", 'w') as d:
                 d.write(f.read())
-        natives_path = ROOT_PATH+'/.minecraft/libraries/org/lwjgl/lwjgl/lwjgl-platform/2.9.2-nightly-20140822/lwjgl-platform-2.9.2-nightly-20140822-natives-windows.jar'
+        natives_path = ROOT_PATH + '/.minecraft/libraries/org/lwjgl/lwjgl/lwjgl-platform/2.9.2-nightly-20140822/lwjgl-platform-2.9.2-nightly-20140822-natives-windows.jar'
         with ZipFile(natives_path, 'r') as zip_ref:
-            zip_ref.extractall(ROOT_PATH+"/.minecraft/versions/1.12.2/natives/")
+            zip_ref.extractall(ROOT_PATH + "/.minecraft/versions/1.12.2/natives/")
         self.tx_sum.SetLabel(f"* Completed! * ")
         self.sum_progress.slideTo(1)
         time.sleep(1.5)
         self.final_frame.Destroy()
         Thread(target=launch, kwargs={"player": self.name}).start()
 
-    def task_handler(self, task):
+    def download_task_handler(self, task):
         self.tasks.append(task)
         task.run()
         self.tasks.remove(task)
