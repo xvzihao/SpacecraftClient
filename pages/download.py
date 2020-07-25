@@ -1,4 +1,6 @@
 import ssl
+from socket import timeout
+from urllib.error import URLError
 from urllib.request import urlopen, Request
 from zipfile import ZipFile
 
@@ -13,6 +15,35 @@ class Task:
     @staticmethod
     def get_missing():
         missing = []
+
+        try:
+            with urlopen(
+                url=server_url+'/mods/planned',
+                timeout=5,
+            ) as browser:
+                content = json.loads(browser.read().decode('utf8'))
+                for name in content:
+                    link = content[name]['link']
+                    with urlopen(
+                        url=Request(
+                            url=link,
+                            headers={"User-Agent": "SpaceCraft-Client"}
+                        ),
+                        context=ssl.create_default_context()
+                    ) as b:
+                        size = int(b.headers.get("Content-Length"))
+                        path = os.path.join(ROOT_PATH, ".minecraft/mods/", name)
+                        if not Path(path).exists():
+                            missing.append(
+                                Task(link, path, size)
+                            )
+                        elif os.path.getsize(path) != size:
+                            missing.append(
+                                Task(link, path, size)
+                            )
+
+        except URLError as e:
+            print(e)
         with File('assets/1.12.json', 'r') as f:
             objs = json.load(f)["objects"]
         for name in objs:

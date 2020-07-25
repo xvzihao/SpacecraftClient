@@ -6,7 +6,7 @@ from libraries import content as libraries
 from locals import *
 
 
-launch_meta_url = 'https://launchermeta.mojang.com/v1/packages/1584b57c1a0b5e593fad1f5b8f78536ca640547b/1.12.json"'
+server_url = "http://104.154.99.151:2005/"
 
 
 class Objects:
