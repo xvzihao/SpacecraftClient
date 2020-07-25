@@ -7,11 +7,11 @@ from locals import *
 
 def launch(
         root=ROOT_PATH,
-        java=u"C:/Program Files/Java/jre1.8.0_251/bin/java.exe",
+        java=JAVA_PATH,
         player="steve",
-        memory=2048,
-        width=854,
-        height=480,
+        memory=DEFAULT_MEMORY,
+        width=1200,
+        height=800,
         uuid=None,
         access_token=None,
 ):

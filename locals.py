@@ -1,4 +1,6 @@
+import os
 import time
+import platform
 from pathlib import Path
 from threading import Thread
 
@@ -7,9 +9,25 @@ import get
 
 VERSION = 'pre1.0'
 
+MACHINE = platform.machine()
+
+jre = 'jre-x64' if MACHINE.endswith('64') else 'jre-x86'
+
+JAVA_PATH = str(Path(os.path.join('runtime', jre, 'bin', 'java.exe')))
+
+DEFAULT_MEMORY = 2048 if MACHINE.endswith('64') else 1536
+
 WIN_WIDTH = 960
 WIN_HEIGHT = 600
 ROOT_PATH = '.'
+
+
+def need_load(name, size):
+    path = Path(name)
+    if path.exists():
+        if os.path.getsize(path) == size:
+            return False
+    return True
 
 
 def File(filename, mode='wb'):
