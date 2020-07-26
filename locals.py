@@ -87,7 +87,7 @@ class ProgressBar(Panel):
         try:
             while True:
                 w, h = self.child.GetSize()
-                self.child.SetSize((w - (w - (width * (self.target + 0.05))) / 20, height))
+                CallAfter(self.child.SetSize, (w - (w - (width * (self.target + 0.05))) / 20, height))
                 time.sleep(1/60)
         except Exception as e:
             print(e)

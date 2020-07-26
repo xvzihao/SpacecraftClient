@@ -186,14 +186,14 @@ class TaskBar(Panel):
         self.pos = self.GetPosition()
 
     def set_state(self, task):
-        self.label.SetLabel(f"[{str(int(task.progress * 100)).rjust(3)}%] {task.path}")
+        CallAfter(self.label.SetLabel, f"[{str(int(task.progress * 100)).rjust(3)}%] {task.path}")
         self.bar.slideTo(task.progress)
 
     def hide(self):
-        self.SetPosition((0, -100))
+        CallAfter(self.SetPosition, (0, -100))
 
     def show(self):
-        self.SetPosition(self.pos)
+        CallAfter(self.SetPosition, self.pos)
 
 
 class DownloadFrame(BaseFrame):
@@ -271,7 +271,7 @@ class DownloadFrame(BaseFrame):
             missing.append(Task(url, path, size))
 
         if missing:
-            self.tx_title.SetLabel("Loading Assets")
+            CallAfter(self.tx_title.SetLabel, "Loading Assets")
 
         for task in missing:
             Thread(target=self.download_task_handler, args=(task,)).start()
@@ -291,7 +291,7 @@ class DownloadFrame(BaseFrame):
                     return
                 count = len(missing)
                 self.sum_progress.slideTo(self.completed / count)
-                self.tx_sum.SetLabel(f"Tasks [{self.completed}/{count}]")
+                CallAfter(self.tx_sum.SetLabel, f"Tasks [{self.completed}/{count}]")
 
                 try:
                     non_hide_list = []
@@ -315,15 +315,13 @@ class DownloadFrame(BaseFrame):
             natives_path = ROOT_PATH + '/.minecraft/libraries/org/lwjgl/lwjgl/lwjgl-platform/2.9.2-nightly-20140822/lwjgl-platform-2.9.2-nightly-20140822-natives-windows.jar'
             with ZipFile(natives_path, 'r') as zip_ref:
                 zip_ref.extractall(ROOT_PATH + "/.minecraft/versions/1.12.2/natives/")
-            self.tx_sum.SetLabel(f"* Completed! * ")
+            CallAfter(self.tx_sum.SetLabel, f"* Completed! * ")
             self.sum_progress.slideTo(1)
-            self.tx_title.SetLabel("Launching Game")
-            self.EnableCloseButton(False)
-            self.EnableMinimizeButton(False)
-            self.final_frame.EnableCloseButton(False)
-            self.final_frame.EnableMinimizeButton(False)
+            CallAfter(self.tx_title.SetLabel, "Launching Game")
+            CallAfter(self.EnableCloseButton, False)
+            CallAfter(self.final_frame.EnableCloseButton, False)
             time.sleep(1.5)
-            self.final_frame.Destroy()
+            CallAfter(self.final_frame.Destroy)
             Thread(target=launch, kwargs={"player": self.name}).start()
         except RuntimeError:
             self.Destroy()

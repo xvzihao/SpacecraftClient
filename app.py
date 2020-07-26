@@ -32,7 +32,7 @@ class MainFrame(BaseFrame):
 
     def on_resize(self, event: SizeEvent):
         w, h = event.GetSize()
-        self.screen.SetSize(w - 16, h - 39)
+        self.screen.SetSize(w, h)
         self._page.SetSize(w, h)
         self._page.on_resize(w, h)
 

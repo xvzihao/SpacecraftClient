@@ -1,11 +1,7 @@
-import time
-from threading import Thread
+import re
 
-from wx.core import *
 from locals import *
 from pages.download import DownloadFrame
-
-import re
 
 
 class LaunchPage(Page):
@@ -18,7 +14,7 @@ class LaunchPage(Page):
         self.launchable = False
 
         self.title = StaticBitmap(self, bitmap=get.scaled(get.image("assets/tx_space_craft.png"), 0.32))
-        self.tx_name = TextCtrl(self, size=(200, 32), style=TE_CENTER|TE_PROCESS_ENTER)
+        self.tx_name = TextCtrl(self, size=(200, 32), style=TE_CENTER | TE_PROCESS_ENTER)
         self.tx_name.SetForegroundColour(Colour(255, 255, 255))
         self.tx_name.SetBackgroundColour(Colour(0, 0, 0))
         self.tx_name.SetFont(
@@ -64,44 +60,44 @@ class LaunchPage(Page):
         value = evt.GetString()
         if len(value) > 16:
             cursor = self.tx_name.GetInsertionPoint()
-            self.tx_name.SetValue(self._last_name)
-            self.tx_name.SetInsertionPoint(cursor-1)
-            self.btn_play.SetBackgroundColour(Colour(45, 202, 100))
+            CallAfter(self.tx_name.SetValue, self._last_name)
+            CallAfter(self.tx_name.SetInsertionPoint, (cursor - 1))
+            CallAfter(self.btn_play.SetBackgroundColour, Colour(45, 202, 100))
             value = self.tx_name.GetValue()
         if re.fullmatch("^[a-zA-Z0-9_\-]{2,16}$", value):
             self._last_name = value
             self.launchable = True
-            self.btn_play.SetBackgroundColour(Colour(45, 202, 100))
+            CallAfter(self.btn_play.SetBackgroundColour, Colour(45, 202, 100))
         else:
-            self.btn_play.SetBackgroundColour(Colour(128, 128, 128))
+            CallAfter(self.btn_play.SetBackgroundColour, Colour(128, 128, 128))
             self.launchable = False
 
     def on_enter_btn(self, evt):
         if self.launchable:
-            self.btn_play.SetBackgroundColour(Colour(75, 232, 130) if not self.pressed else Colour(45, 202, 100))
+            CallAfter(self.btn_play.SetBackgroundColour, (Colour(75, 232, 130) if not self.pressed else Colour(45, 202, 100)))
         else:
-            self.btn_play.SetBackgroundColour(Colour(128, 128, 128))
+            CallAfter(self.btn_play.SetBackgroundColour, Colour(128, 128, 128))
 
     def on_leave_btn(self, evt):
         if self.launchable:
-            self.btn_play.SetBackgroundColour(Colour(45, 215, 100) if not self.pressed else Colour(45, 202, 100))
+            CallAfter(self.btn_play.SetBackgroundColour, (Colour(45, 215, 100) if not self.pressed else Colour(45, 202, 100)))
         else:
-            self.btn_play.SetBackgroundColour(Colour(128, 128, 128))
+            CallAfter(self.btn_play.SetBackgroundColour, Colour(128, 128, 128))
 
     def on_press(self):
         if self.launchable:
             self.pressed = True
-            self.btn_play.SetBackgroundColour(Colour(45, 202, 100))
+            CallAfter(self.btn_play.SetBackgroundColour, Colour(45, 202, 100))
             frame = DownloadFrame(self, self.tx_name.GetValue(), self.GetParent().GetParent())
             self.btn_play.Disable()
             self.tx_name.Disable()
             self.pressed = False
-            self.btn_play.SetBackgroundColour(Colour(45, 215, 100))
+            CallAfter(self.btn_play.SetBackgroundColour, Colour(45, 215, 100))
         else:
-            self.btn_play.SetBackgroundColour(Colour(128, 128, 128))
+            CallAfter(self.btn_play.SetBackgroundColour, Colour(128, 128, 128))
 
     def on_resize(self, width, height):
-        self.image_container.SetSize((width * (4 / 7), height))
+        CallAfter(self.image_container.SetSize, (width * (4 / 7), height))
         w, h = self.img_earth.GetSize()
         w /= 2
         h /= 2
@@ -132,4 +128,3 @@ class LaunchPage(Page):
         self.btn_play.SetPosition((
             width * (7 / 9) - w, height * (7 / 9) - h
         ))
-
