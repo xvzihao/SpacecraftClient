@@ -101,21 +101,21 @@ class LaunchPage(Page):
         w, h = self.img_earth.GetSize()
         w /= 2
         h /= 2
-        self.img_earth.SetPosition((
+        CallAfter(self.img_earth.SetPosition,(
             width * (2 / 7) - w, height * (23 / 48) - h
         ))
 
         w, h = self.title.GetSize()
         w /= 2
         h /= 2
-        self.title.SetPosition((
+        CallAfter(self.title.SetPosition, (
             width * (7 / 9) - w, height * (1 / 5) - h
         ))
 
         w, h = self.tx_name.GetSize()
         w /= 2
         h /= 2
-        self.tx_name.SetPosition((
+        CallAfter(self.tx_name.SetPosition, (
             width * (7 / 9) - w, height * (1 / 2) - h
         ))
         self.label_name.SetPosition((
@@ -125,6 +125,6 @@ class LaunchPage(Page):
         w, h = self.btn_play.GetSize()
         w /= 2
         h /= 2
-        self.btn_play.SetPosition((
+        CallAfter(self.btn_play.SetPosition,(
             width * (7 / 9) - w, height * (7 / 9) - h
         ))

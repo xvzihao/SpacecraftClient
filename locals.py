@@ -10,16 +10,25 @@ import get
 VERSION = 'pre1.0'
 
 MACHINE = platform.machine()
+OS = platform.system()
 
 jre = 'jre-x64' if MACHINE.endswith('64') else 'jre-x86'
 
-JAVA_PATH = str(Path(os.path.join('runtime', jre, 'bin', 'java.exe')))
+JAVA_PATH = str(Path(os.path.join('runtime', jre, 'bin', 'java' + ('' if OS == 'Linux' else '.exe'))))
 
 DEFAULT_MEMORY = 2048 if MACHINE.endswith('64') else 1536
 
 WIN_WIDTH = 960
 WIN_HEIGHT = 600
 ROOT_PATH = '.'
+
+with open(
+    "assets/launch_temp_linux"
+    if OS == 'Linux' else
+    "assets/launch_temp_windows"
+    , 'r'
+) as f:
+    LAUNCH_TEMPLATE = f.read()
 
 
 def need_load(name, size):

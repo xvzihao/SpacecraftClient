@@ -43,14 +43,16 @@ class Library:
             if "artifact" in self.downloads:
                 self.artifact = self.downloads["artifact"]
             else:
-                self.artifact = self.downloads["classifiers"]["natives-windows"]
+                if OS == 'Linux':
+                    self.artifact = self.downloads["classifiers"]["natives-linux"]
+                else:
+                    self.artifact = self.downloads["classifiers"]["natives-windows"]
             self._path = self.artifact["path"]
             self.url = self.artifact["url"]
             self.sha1 = self.artifact["sha1"]
             self.size = self.artifact["size"]
         else:
             self.useless = True
-
 
     @property
     def done(self):

@@ -1,12 +1,18 @@
+import re
+import shutil
 import ssl
+from gzip import GzipFile
+from tarfile import TarFile
+import tarfile
 from urllib.error import URLError
 from urllib.request import urlopen, Request
 from zipfile import ZipFile
 
+from wx.core import *
+
 from launcher import launch
 from libraries import jre32, jre64
 from loader import *
-from wx.core import *
 
 
 def is_mod(name):
@@ -69,18 +75,22 @@ class Task:
                     )
 
         # Jre Part
-        res = jre64['files'] if MACHINE.endswith('64') else jre32['files']
+        if OS == "Linux":
+            if not Path(JAVA_PATH).exists():
+                missing.append(JreTask())
+        else:
+            res = jre64['files'] if MACHINE.endswith('64') else jre32['files']
 
-        for name in res:
-            details = res[name]
-            if details['type'] == 'file':
-                size = details['downloads']['raw']['size']
-                url = details['downloads']['raw']['url']
-                path = os.path.join('runtime', jre, name)
-                if need_load(path, size):
-                    missing.append(
-                        Task(url, str(Path(path)), size)
-                    )
+            for name in res:
+                details = res[name]
+                if details['type'] == 'file':
+                    size = details['downloads']['raw']['size']
+                    url = details['downloads']['raw']['url']
+                    path = os.path.join('runtime', jre, name)
+                    if need_load(path, size):
+                        missing.append(
+                            Task(url, str(Path(path)), size)
+                        )
 
         return missing
 
@@ -141,6 +151,8 @@ class Task:
                     context=ssl.create_default_context()
                 )
                 try:
+                    if self.size is None:
+                        self.size = int(self.browser.headers.get("Content-Length"))
                     data = None
                     while data != b'':
                         data = browser.read(1024)
@@ -156,16 +168,44 @@ class Task:
                     raise e
                 file.close()
                 browser.close()
-                break
+                return True
             except Exception as e:
                 print("Error Courred when trying to download %s from %s" % (self.file, self.url))
                 print("Exception: ", e)
+                print("Retry in 2 seconds")
+                time.sleep(2)
 
     @property
     def progress(self):
         if self.file:
-            return os.path.getsize(self.path) / self.size
+            if self.size:
+                return os.path.getsize(self.path) / self.size
+            return 0
         return 0
+
+
+class JreTask(Task):
+    def __init__(self):
+        link = "https://javadl.oracle.com/webapps/download/AutoDL?BundleId=242980_a4634525489241b9a9e1aa73d9e118e6" \
+            if MACHINE.endswith('64') else \
+            "https://javadl.oracle.com/webapps/download/AutoDL?BundleId=242978_a4634525489241b9a9e1aa73d9e118e6"
+        super().__init__(
+            url=link,
+            file="./%s.tar.gz" % jre,
+            size=None
+        )
+
+    def run(self):
+        if not Path(self.path).exists():
+            super(JreTask, self).run()
+        if not re.match("jre[0-9]\.[0-9]\.[0-9]_[0-9]{1,5}", '\n'.join(os.listdir('runtime'))):
+            with tarfile.open(self.path, 'r:gz') as obj:
+                obj.extractall('runtime')
+        os.rename(
+            os.path.join('runtime', re.match("jre[0-9]\.[0-9]\.[0-9]_[0-9]{1,5}", '\n'.join(os.listdir('runtime')))[0] ),
+            os.path.join('runtime', jre)
+        )
+
 
 
 class TaskBar(Panel):
@@ -244,9 +284,9 @@ class DownloadFrame(BaseFrame):
             task.cancel = True
         print("Finished Cancel")
         self.cancel = True
-        self.GetParent().tx_name.Enable()
-        self.GetParent().btn_play.Enable()
-        self.Destroy()
+        CallAfter(self.GetParent().tx_name.Enable)
+        CallAfter(self.GetParent().btn_play.Enable)
+        CallAfter(self.Destroy)
 
     def create_task_thread(self, missing):
         url = 'https://launcher.mojang.com/v1/objects/0f275bc1547d01fa5f56ba34bdc87d981ee12daf/client.jar'
@@ -312,8 +352,12 @@ class DownloadFrame(BaseFrame):
             with open(ROOT_PATH + "/assets/1.12.json", 'r') as f:
                 with File(ROOT_PATH + "/.minecraft/assets/indexes/1.12.json", 'w') as d:
                     d.write(f.read())
-            natives_path = ROOT_PATH + '/.minecraft/libraries/org/lwjgl/lwjgl/lwjgl-platform/2.9.2-nightly-20140822/lwjgl-platform-2.9.2-nightly-20140822-natives-windows.jar'
+            natives_path = ROOT_PATH + f'/.minecraft/libraries/org/lwjgl/lwjgl/lwjgl-platform/2.9.2-nightly-20140822/lwjgl-platform-2.9.2-nightly-20140822-natives-{"linux" if OS == "Linux" else "windows"}.jar'
             with ZipFile(natives_path, 'r') as zip_ref:
+                try:
+                    shutil.rmtree(ROOT_PATH + "/.minecraft/versions/1.12.2/natives/")
+                except FileNotFoundError:
+                    pass
                 zip_ref.extractall(ROOT_PATH + "/.minecraft/versions/1.12.2/natives/")
             CallAfter(self.tx_sum.SetLabel, f"* Completed! * ")
             self.sum_progress.slideTo(1)
@@ -324,7 +368,7 @@ class DownloadFrame(BaseFrame):
             CallAfter(self.final_frame.Destroy)
             Thread(target=launch, kwargs={"player": self.name}).start()
         except RuntimeError:
-            self.Destroy()
+            CallAfter(self.Destroy)
 
     def download_task_handler(self, task):
         self.tasks.append(task)
