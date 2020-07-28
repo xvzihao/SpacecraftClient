@@ -104,24 +104,14 @@ class ProgressBar(Panel):
         self.child.SetBackgroundColour(Colour(0, 200, 0))
         self.child.SetPosition((0, 0))
         self.target = 0
-        Thread(target=self._slideTo).start()
 
     def slideTo(self, value):
         self.target = value
 
-    def _slideTo(self):
+    def update(self):
         width, height = self.GetSize()
         w, h = self.child.GetSize()
-        try:
-            while True:
-                w, h = self.child.GetSize()
-                CallAfter(self.child.SetSize, (w - (w - (width * (self.target + 0.05))) / 20, height))
-                time.sleep(1/60)
-        except Exception as e:
-            print(e)
-
-    def update(self):
-        pass
+        CallAfter(self.child.SetSize, (w - (w - (width * (self.target + 0.05))) / 20, height))
 
     def SetSize(self, size):
         super(ProgressBar, self).SetSize(size)

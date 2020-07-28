@@ -159,10 +159,12 @@ class Task:
                     if self.size is None:
                         self.size = int(self.browser.headers.get("Content-Length"))
                     data = None
+
                     while data != b'':
                         data = browser.read(1024)
                         file.write(data)
                         downloadFrame.stream_size += len(data)
+
                         if self.cancel:
                             file.close()
                             browser.close()
@@ -179,7 +181,6 @@ class Task:
                 print("Error Courred when trying to download %s from %s" % (self.file, self.url))
                 print("Exception: ", e)
                 print("Retry in 2 seconds")
-                raise(e)
                 time.sleep(2)
 
     @property
@@ -202,9 +203,9 @@ class JreTask(Task):
             size=None
         )
 
-    def run(self):
+    def run(self, frame):
         if not Path(self.path).exists():
-            super(JreTask, self).run()
+            super(JreTask, self).run(frame)
         if not re.match("jre[0-9]\.[0-9]\.[0-9]_[0-9]{1,5}", '\n'.join(os.listdir('runtime'))):
             with tarfile.open(self.path, 'r:gz') as obj:
                 obj.extractall('runtime')
@@ -235,6 +236,7 @@ class TaskBar(Panel):
     def set_state(self, task):
         CallAfter(self.label.SetLabel, f"[{str(int(task.progress * 100)).rjust(3)}%] {str(Path(task.path))}")
         self.bar.slideTo(task.progress)
+        self.bar.update()
 
     def hide(self):
         CallAfter(self.SetPosition, (0, -100))
@@ -327,11 +329,12 @@ class DownloadFrame(BaseFrame):
         for task in missing:
             if self.cancel:
                 return
-            while self.running_task >= 32:
+            while self.running_task >= 16:
                 if self.cancel:
                     return
-                time.sleep(0.1)
+                time.sleep(0.5)
             self.running_task += 1
+            time.sleep(0.0175)
             Thread(target=self.download_task_handler, args=(task,)).start()
 
         for name in Task.get_non_used():
@@ -348,7 +351,7 @@ class DownloadFrame(BaseFrame):
             last_size = 0
             speed = toSize(0) + '/sec'
             while self.completed != count:
-                time.sleep(0.1)
+                time.sleep(1/60)
                 if self.cancel:
                     return
                 count = len(missing)
@@ -363,6 +366,7 @@ class DownloadFrame(BaseFrame):
                     last_size = self.stream_size
 
                 try:
+                    self.sum_progress.update()
                     non_hide_list = []
                     for i in range(min(7, len(self.tasks))):
                         self.tasks_widgets[i].set_state(self.tasks[i])
@@ -372,10 +376,10 @@ class DownloadFrame(BaseFrame):
                             self.tasks_widgets[i].show()
                         else:
                             self.tasks_widgets[i].hide()
+                    self.UpdateWindowUI()
                 except IndexError:
                     pass
 
-                time.sleep(0.2)
             with File(ROOT_PATH + "/.minecraft/versions/1.12.2/1.12.2.json", 'w') as f:
                 json.dump(libraries, f)
             with open("assets/1.12.json", 'r') as f:
