@@ -135,7 +135,7 @@ class Task:
             self.browser.close()
         self._cancel = value
 
-    def run(self):
+    def run(self, downloadFrame):
         while True:
             try:
                 file = self.file = File(str(self.path))
@@ -162,6 +162,7 @@ class Task:
                     while data != b'':
                         data = browser.read(1024)
                         file.write(data)
+                        downloadFrame.stream_size += len(data)
                         if self.cancel:
                             file.close()
                             browser.close()
@@ -231,7 +232,7 @@ class TaskBar(Panel):
         self.pos = self.GetPosition()
 
     def set_state(self, task):
-        CallAfter(self.label.SetLabel, f"[{str(int(task.progress * 100)).rjust(3)}%] {task.path}")
+        CallAfter(self.label.SetLabel, f"[{str(int(task.progress * 100)).rjust(3)}%] {str(Path(task.path))}")
         self.bar.slideTo(task.progress)
 
     def hide(self):
@@ -282,6 +283,8 @@ class DownloadFrame(BaseFrame):
 
         self.Bind(EVT_CLOSE, self.on_close)
 
+        self.stream_size = 0
+
         Thread(target=self.centerThread).start()
         Thread(target=self.main_thread).start()
 
@@ -323,7 +326,7 @@ class DownloadFrame(BaseFrame):
         for task in missing:
             if self.cancel:
                 return
-            while self.running_task >= 64:
+            while self.running_task >= 32:
                 if self.cancel:
                     return
                 time.sleep(0.1)
@@ -340,12 +343,23 @@ class DownloadFrame(BaseFrame):
             missing = Task.get_missing()
             count = len(missing)
             Thread(target=self.create_task_thread, args=(missing,)).start()
+            last_count = 0
+            last_size = 0
+            speed = toSize(0) + '/sec'
             while self.completed != count:
+                time.sleep(0.1)
                 if self.cancel:
                     return
                 count = len(missing)
                 self.sum_progress.slideTo(self.completed / count)
-                CallAfter(self.tx_sum.SetLabel, f"Tasks [{self.completed}/{count}]")
+                CallAfter(self.tx_sum.SetLabel, f"Tasks [{self.completed}/{count}]  {speed}")
+
+                now = time.time()
+
+                if now - last_count > 0.3:
+                    last_count = now
+                    speed = toSize((self.stream_size - last_size) / 0.3) + '/sec'
+                    last_size = self.stream_size
 
                 try:
                     non_hide_list = []
@@ -386,7 +400,7 @@ class DownloadFrame(BaseFrame):
 
     def download_task_handler(self, task):
         self.tasks.append(task)
-        task.run()
+        task.run(self)
         self.tasks.remove(task)
         self.completed += 1
         self.running_task -= 1

@@ -8,7 +8,7 @@ from psutil import virtual_memory
 from wx.core import *
 import get
 
-VERSION = '1.0'
+VERSION = '1.2'
 
 MACHINE = platform.machine()
 OS = platform.system()
@@ -32,6 +32,21 @@ with open(
     , 'r'
 ) as f:
     LAUNCH_TEMPLATE = f.read()
+
+
+def toSize(size):
+    kb = 1024
+    mb = kb * kb
+    gb = kb * mb
+
+    if size > gb * 0.8:
+        return f"{size * 10 // gb / 10}GB"
+    elif size > mb * 0.8:
+        return f"{size * 10 // mb / 10}MB"
+    elif size > kb * 0.8:
+        return f"{size * 10 // kb / 10}KB"
+    else:
+        return f"{size}B"
 
 
 def need_load(name, size):
