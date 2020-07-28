@@ -16,7 +16,7 @@ OS = platform.system()
 
 jre = 'jre-x64' if MACHINE.endswith('64') else 'jre-x86'
 
-JAVA_PATH = str(Path(os.path.join('runtime', jre, 'bin', 'java' + ('' if OS == 'Linux' else '.exe'))))
+JAVA_PATH = str(Path(os.path.join('runtime', jre, 'bin', 'javaw' + ('' if OS == 'Linux' else '.exe'))))
 
 DEFAULT_MEMORY = int(virtual_memory().total // 1024 ** 2 // 5 * 2)
 if DEFAULT_MEMORY > 2048 and not MACHINE.endswith('64'):
