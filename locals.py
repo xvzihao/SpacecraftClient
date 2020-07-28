@@ -7,7 +7,7 @@ from threading import Thread
 from wx.core import *
 import get
 
-VERSION = 'pre1.0'
+VERSION = '1.0'
 
 MACHINE = platform.machine()
 OS = platform.system()

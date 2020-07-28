@@ -41,7 +41,7 @@ def launch(
         subprocess.Popen(['bash', 'launch.sh'])
 
     else:
-        subprocess.call([java, script])
+        subprocess.Popen(java+' '+script)
 
 
 if __name__ == '__main__':
