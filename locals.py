@@ -9,7 +9,7 @@ from psutil import virtual_memory
 from wx.core import *
 import get
 
-VERSION = '1.3'
+VERSION = '1.5'
 
 MACHINE = platform.machine()
 OS = platform.system()
