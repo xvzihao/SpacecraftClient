@@ -56,8 +56,9 @@ class LaunchPage(Page):
 
         self._last_name = self.tx_name.GetValue()
 
-        if Path("user_name").exists():
-            with open("user_name", 'r') as f:
+        user_name_path = os.path.join(ROOT_PATH, 'user_name')
+        if Path(user_name_path).exists():
+            with open(user_name_path, 'r') as f:
                 self.tx_name.SetValue(f.read())
         self.on_text(None)
 
@@ -73,7 +74,7 @@ class LaunchPage(Page):
             self._last_name = value
             self.launchable = True
             CallAfter(self.btn_play.SetBackgroundColour, Colour(45, 202, 100))
-            with open('user_name', 'w') as f:
+            with File('user_name', 'w') as f:
                 f.write(value)
         else:
             CallAfter(self.btn_play.SetBackgroundColour, Colour(128, 128, 128))

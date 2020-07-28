@@ -1,3 +1,4 @@
+import getpass
 import os
 import time
 import platform
@@ -23,7 +24,7 @@ if DEFAULT_MEMORY > 2048 and not MACHINE.endswith('64'):
 
 WIN_WIDTH = 960
 WIN_HEIGHT = 600
-ROOT_PATH = '.'
+ROOT_PATH = f"C:/Users/{getpass.getuser()}/AppData/Roaming/.amcl/" if OS.lower() == 'windows' else './'
 
 with open(
     "assets/launch_temp_linux"
@@ -58,7 +59,7 @@ def need_load(name, size):
 
 
 def File(filename, mode='wb'):
-    path = Path(ROOT_PATH+'/'+filename)
+    path = Path(filename)
     parent = str(path.parent).replace('\\', '/').split('/')
     current = ''
     while parent:

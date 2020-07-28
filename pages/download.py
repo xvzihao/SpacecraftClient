@@ -179,6 +179,7 @@ class Task:
                 print("Error Courred when trying to download %s from %s" % (self.file, self.url))
                 print("Exception: ", e)
                 print("Retry in 2 seconds")
+                raise(e)
                 time.sleep(2)
 
     @property
@@ -377,7 +378,7 @@ class DownloadFrame(BaseFrame):
                 time.sleep(0.2)
             with File(ROOT_PATH + "/.minecraft/versions/1.12.2/1.12.2.json", 'w') as f:
                 json.dump(libraries, f)
-            with open(ROOT_PATH + "/assets/1.12.json", 'r') as f:
+            with open("assets/1.12.json", 'r') as f:
                 with File(ROOT_PATH + "/.minecraft/assets/indexes/1.12.json", 'w') as d:
                     d.write(f.read())
             natives_path = ROOT_PATH + f'/.minecraft/libraries/org/lwjgl/lwjgl/lwjgl-platform/2.9.2-nightly-20140822/lwjgl-platform-2.9.2-nightly-20140822-natives-{"linux" if OS == "Linux" else "windows"}.jar'
