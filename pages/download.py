@@ -131,7 +131,7 @@ class Task:
 
     @cancel.setter
     def cancel(self, value):
-        if value:
+        if value and self.browser:
             self.browser.close()
         self._cancel = value
 
@@ -151,6 +151,11 @@ class Task:
                     context=ssl.create_default_context()
                 )
                 try:
+                    if self.cancel:
+                        print("Cancelled Download Task: %s" % self.path)
+                        file.close()
+                        self.browser.close()
+                        return
                     if self.size is None:
                         self.size = int(self.browser.headers.get("Content-Length"))
                     data = None
@@ -273,6 +278,8 @@ class DownloadFrame(BaseFrame):
         self.cancel = False
         self.Show(True)
 
+        self.running_task = 0
+
         self.Bind(EVT_CLOSE, self.on_close)
 
         Thread(target=self.centerThread).start()
@@ -282,11 +289,11 @@ class DownloadFrame(BaseFrame):
         print("Canceling Tasks")
         for task in self.tasks:
             task.cancel = True
-        print("Finished Cancel")
         self.cancel = True
+        print("Finished Cancel")
         CallAfter(self.GetParent().tx_name.Enable)
         CallAfter(self.GetParent().btn_play.Enable)
-        CallAfter(self.Destroy)
+        self.Destroy()
 
     def create_task_thread(self, missing):
         url = 'https://launcher.mojang.com/v1/objects/0f275bc1547d01fa5f56ba34bdc87d981ee12daf/client.jar'
@@ -314,6 +321,13 @@ class DownloadFrame(BaseFrame):
             CallAfter(self.tx_title.SetLabel, "Loading Assets")
 
         for task in missing:
+            if self.cancel:
+                return
+            while self.running_task >= 64:
+                if self.cancel:
+                    return
+                time.sleep(0.1)
+            self.running_task += 1
             Thread(target=self.download_task_handler, args=(task,)).start()
 
         for name in Task.get_non_used():
@@ -375,3 +389,4 @@ class DownloadFrame(BaseFrame):
         task.run()
         self.tasks.remove(task)
         self.completed += 1
+        self.running_task -= 1

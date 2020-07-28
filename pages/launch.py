@@ -56,8 +56,13 @@ class LaunchPage(Page):
 
         self._last_name = self.tx_name.GetValue()
 
+        if Path("user_name").exists():
+            with open("user_name", 'r') as f:
+                self.tx_name.SetValue(f.read())
+        self.on_text(None)
+
     def on_text(self, evt: CommandEvent):
-        value = evt.GetString()
+        value = self.tx_name.GetValue()
         if len(value) > 16:
             cursor = self.tx_name.GetInsertionPoint()
             CallAfter(self.tx_name.SetValue, self._last_name)
@@ -68,6 +73,8 @@ class LaunchPage(Page):
             self._last_name = value
             self.launchable = True
             CallAfter(self.btn_play.SetBackgroundColour, Colour(45, 202, 100))
+            with open('user_name', 'w') as f:
+                f.write(value)
         else:
             CallAfter(self.btn_play.SetBackgroundColour, Colour(128, 128, 128))
             self.launchable = False
@@ -92,7 +99,7 @@ class LaunchPage(Page):
             self.btn_play.Disable()
             self.tx_name.Disable()
             self.pressed = False
-            CallAfter(self.btn_play.SetBackgroundColour, Colour(45, 215, 100))
+            CallAfter(self.btn_play.SetBackgroundColour, Colour(45, 202, 100))
         else:
             CallAfter(self.btn_play.SetBackgroundColour, Colour(128, 128, 128))
 
@@ -119,7 +126,7 @@ class LaunchPage(Page):
             width * (7 / 9) - w, height * (1 / 2) - h
         ))
         self.label_name.SetPosition((
-            width * (7 / 9) - w - 16, height * (1 / 2) - h - 32
+            width * (7 / 9) - w - 16, height * (1 / 2) - h - 38
         ))
 
         w, h = self.btn_play.GetSize()

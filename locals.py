@@ -4,6 +4,7 @@ import platform
 from pathlib import Path
 from threading import Thread
 
+from psutil import virtual_memory
 from wx.core import *
 import get
 
@@ -16,7 +17,9 @@ jre = 'jre-x64' if MACHINE.endswith('64') else 'jre-x86'
 
 JAVA_PATH = str(Path(os.path.join('runtime', jre, 'bin', 'java' + ('' if OS == 'Linux' else '.exe'))))
 
-DEFAULT_MEMORY = 2048 if MACHINE.endswith('64') else 1536
+DEFAULT_MEMORY = int(virtual_memory().total // 1024 ** 2 // 5 * 2)
+if DEFAULT_MEMORY > 2048 and not MACHINE.endswith('64'):
+    DEFAULT_MEMORY = 2048
 
 WIN_WIDTH = 960
 WIN_HEIGHT = 600
