@@ -74,7 +74,7 @@ class LaunchPage(Page):
             self._last_name = value
             self.launchable = True
             CallAfter(self.btn_play.SetBackgroundColour, Colour(45, 202, 100))
-            with File('user_name', 'w') as f:
+            with File(os.path.join(ROOT_PATH, 'user_name'), 'w') as f:
                 f.write(value)
         else:
             CallAfter(self.btn_play.SetBackgroundColour, Colour(128, 128, 128))
