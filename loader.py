@@ -6,7 +6,7 @@ from libraries import content as libraries
 from locals import *
 
 
-server_url = 'http://localhost:2005/'# "http://mc.alex-xu.site:2005/"
+server_url = "http://mc.alex-xu.site:2005/"
 
 
 class Objects:
