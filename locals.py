@@ -9,7 +9,7 @@ from psutil import virtual_memory
 from wx.core import *
 import get
 
-VERSION = '1.6.1'
+VERSION = '1.6.2'
 
 ADDRESS = 'mc.alex-xu.site'
 
