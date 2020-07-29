@@ -9,9 +9,9 @@ from psutil import virtual_memory
 from wx.core import *
 import get
 
-VERSION = '1.6'
+VERSION = '1.6.1'
 
-ADDRESS = 'localhost'
+ADDRESS = 'mc.alex-xu.site'
 
 MACHINE = platform.machine()
 OS = platform.system()
