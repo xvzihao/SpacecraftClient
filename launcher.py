@@ -1,6 +1,7 @@
 import os
 import random
 import subprocess
+from socket import socket
 
 from locals import *
 
@@ -34,6 +35,19 @@ def launch(
         replace("{VERSION}", VERSION). \
         replace("{UUID}", uuid if uuid else rand_token()). \
         replace("{ACCESS_TOKEN}", access_token if access_token else rand_token())
+
+    try:
+        s = socket()
+        s.settimeout(1)
+        s.connect((ADDRESS, 25565))
+        s.close()
+        connectable = True
+    except:
+        connectable = False
+
+
+    if connectable:
+        script += f' --server {ADDRESS} --port 25565'
 
     if OS == "Linux":
         launch_script = Path("./launch.sh")
